@@ -5,6 +5,7 @@ from requests.exceptions import HTTPError
 from base import CachetTestcase
 from fakeapi import FakeHttpClient
 from cachetclient.v1 import enums
+from cachetclient.v1.incidents import IncidentSearch
 
 
 @mock.patch('cachetclient.client.HttpClient', new=FakeHttpClient)
@@ -28,6 +29,19 @@ class IncidentTests(CachetTestcase):
         # Re-fetch a single issue
         incident = self.client.incidents.get(first.id)
         self.assertEqual(first.id, incident.id)
+
+    def test_get_with_search(self):
+        first = self.client.incidents.create(name="Issue 1", message="Descr", status=enums.INCIDENT_INVESTIGATING)
+        self.client.incidents.create(name="Issue 2",  message="Descr", status=enums.INCIDENT_FIXED)
+        self.client.incidents.create(name="Issue 3",  message="Descr", status=enums.INCIDENT_INVESTIGATING)
+
+        self.assertEqual(self.client.incidents.count(), 3)
+
+        search_query = IncidentSearch(status=enums.INCIDENT_FIXED)
+        incidents = self.client.incidents.list(search_by=search_query)
+        incidents = list(incidents)
+        self.assertEqual(len(incidents), 1)
+        self.assertEqual(incidents[0].name, "Issue 2")
 
     def test_create(self):
         issue = self.client.incidents.create(

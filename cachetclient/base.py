@@ -4,6 +4,18 @@ from typing import Any, Generator, Optional, List
 from cachetclient.httpclient import HttpClient
 
 
+class Searchable:
+    def get_query(self):
+        """
+        Compiles all the searchable fields into a dict to add
+        to the HTTP query.
+
+        Returns:
+            dict: Of all fields to seach by
+        """
+        return {}
+
+
 class Resource:
     """Bag of attributes"""
 
@@ -53,7 +65,7 @@ class Resource:
     def delete(self) -> None:
         """
         Deletes the resource from the server.
-        
+
         Raises:
             HTTPException if the resource don't exist.
         """
@@ -162,7 +174,7 @@ class Manager:
         return self.resource_class(self, response.json()["data"])
 
     def _list_paginated(
-        self, path: str, page=1, per_page=20
+            self, path: str, page=1, per_page=20, search_by: Searchable = Searchable()
     ) -> Generator[Resource, None, None]:
         """List resources paginated.
 
@@ -182,6 +194,7 @@ class Manager:
                 params={
                     "page": page,
                     "per_page": per_page,
+                    **search_by.get_query(),
                 },
             )
             json_data = result.json()

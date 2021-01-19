@@ -9,9 +9,46 @@ from typing import (
 from datetime import datetime
 from collections import abc
 
-from cachetclient.base import Manager, Resource
+from cachetclient.base import Manager, Resource, Searchable
 from cachetclient.v1 import enums
 from cachetclient import utils
+
+
+class ComponentSearch(Searchable):
+
+    def __init__(
+        self,
+        component_id: int = None,
+        name: str = None,
+        status: int = None,
+        order: int = None,
+        group_id: int = None,
+        enabled: bool = None
+    ):
+
+        self.component_id = component_id
+        self.name = name
+        self.status = status
+        self.order = order
+        self.group_id = group_id
+        self.enabled = enabled
+
+    def get_query(self) -> dict:
+        """
+        Compiles all the searchable fields into a dict to add
+        to the HTTP query.
+
+        Returns:
+            dict: Of all fields to seach by
+        """
+        return {
+            "id": self.component_id,
+            "status": self.status,
+            "name": self.name,
+            "order": self.order,
+            "group_id": self.group_id,
+            "enabled": self.enabled
+        }
 
 
 class Component(Resource):
@@ -340,18 +377,19 @@ class ComponentManager(Manager):
         )
 
     def list(
-        self, page: int = 1, per_page: int = 20
+            self, page: int = 1, per_page: int = 20, search_by: ComponentSearch = ComponentSearch()
     ) -> Generator[Component, None, None]:
         """List all components
 
         Keyword Args:
             page (int): The page to start listing
             per_page (int): Number of entries per page
+            search_by (ComponentSearch): Search records for those matching these fields
 
         Returns:
             Generator of Component instances
         """
-        yield from self._list_paginated(self.path, page=page, per_page=per_page)
+        yield from self._list_paginated(self.path, page=page, per_page=per_page, search_by=search_by)
 
     def get(self, component_id: int) -> Component:
         """Get a component by id

@@ -52,16 +52,18 @@ class FakeData:
         data = self.get_by_id(resource_id)
         return FakeHttpResponse(data={'data': data})
 
-    def _list(self, per_page=20, page=1, filter_data=None):
+    def _list(self, per_page=20, page=1, search_by={}):
         """Generic list with pagination"""
         start = per_page * (page - 1)
         end = per_page * page
 
-        # Filter data on a single key/value pair
+        # Filter data based on searchable fields
         data = self.data
-        if filter_data:
-            item = filter_data.popitem()
-            data = [i for i in self.data if item in i.items()]
+        for search_key, search_value in search_by.items():
+            if search_value == None:
+                continue
+
+            data = [i for i in data if search_key in i.keys() and i[search_key] == search_value]
 
         entries = data[start:end]
 
@@ -112,9 +114,14 @@ class FakeComponents(FakeData):
 
     def get(self, component_id=None, params=None, **kwargs):
         if component_id is None:
+            search_by = params
+            search_by.pop('per_page', False)
+            search_by.pop('page', False)
+
             return super()._list(
                 per_page=params.get('per_page') or 20,
                 page=params.get('page') or 1,
+                search_by=search_by,
             )
         else:
             return super()._get(component_id)
@@ -234,9 +241,14 @@ class FakeIncidents(FakeData):
         if incident_id:
             return self._get(incident_id)
         else:
+            search_by = params
+            search_by.pop('per_page', False)
+            search_by.pop('page', False)
+            
             return self._list(
                 per_page=params.get('per_page') or 20,
                 page=params.get('page') or 1,
+                search_by=search_by,
             )
 
     def post(self, params=None, data=None):

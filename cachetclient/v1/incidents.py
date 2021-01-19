@@ -2,10 +2,49 @@ import copy
 from datetime import datetime
 from typing import List, Generator, Optional
 
-from cachetclient.base import Manager, Resource
+from cachetclient.base import Manager, Resource, Searchable
 from cachetclient import utils
 from cachetclient.v1.incident_updates import IncidentUpdatesManager
 from cachetclient.httpclient import HttpClient
+
+
+class IncidentSearch(Searchable):
+
+    def __init__(
+        self,
+        incident_id: int = None,
+        user_id: int = None,
+        component_id: int = None,
+        name: str = None,
+        status: int = None,
+        visible: bool = None,
+        stickied: bool = None
+    ):
+
+        self.incident_id = incident_id
+        self.user_id = user_id
+        self.component_id = component_id
+        self.name = name
+        self.status = status
+        self.visible = visible
+        self.stickied = stickied
+
+    def get_query(self) -> dict:
+        """
+        Compiles all the searchable fields into a dict to add
+        to the HTTP query.
+
+        Returns:
+            dict: Of all fields to seach by
+        """
+        return {
+            "id": self.incident_id,
+            "status": self.status,
+            "component_id": self.component_id,
+            "name": self.name,
+            "visible": self.visible,
+            "stickied": self.stickied
+        }
 
 
 class Incident(Resource):
@@ -271,7 +310,8 @@ class IncidentManager(Manager):
             ),
         )
 
-    def list(self, page: int = 1, per_page: int = 1) -> Generator[Incident, None, None]:
+    def list(self, page: int = 1, per_page: int = 1, search_by: IncidentSearch = IncidentSearch()
+             ) -> Generator[Incident, None, None]:
         """
         List all incidents paginated
 
@@ -286,6 +326,7 @@ class IncidentManager(Manager):
             self.path,
             page=page,
             per_page=per_page,
+            search_by=search_by,
         )
 
     def get(self, incident_id: int) -> Incident:

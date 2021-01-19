@@ -5,6 +5,7 @@ from requests.exceptions import HTTPError
 from base import CachetTestcase
 from fakeapi import FakeHttpClient
 from cachetclient.v1 import enums
+from cachetclient.v1.components import ComponentSearch
 
 
 @mock.patch('cachetclient.client.HttpClient', new=FakeHttpClient)
@@ -96,3 +97,16 @@ class ComponentsTests(CachetTestcase):
         self.assertTrue(comp.has_tag(slug="tag-3"))
         self.assertTrue(comp.has_tag(name="tag 3"))
         self.assertEqual(len(comp.tags), 2)
+
+    def test_list_with_search(self):
+        """Test listing all components matching a search query"""
+        self.create_component(self.client, name="SSO")
+        self.create_component(self.client, name="My Component")
+        self.create_component(self.client, name="VPN")
+
+        search_query = ComponentSearch(name="My Component")
+        comps = self.client.components.list(search_by=search_query)
+
+        comps = list(comps)
+        self.assertEqual(len(comps), 1)
+        self.assertEqual(comps[0].name, "My Component")
